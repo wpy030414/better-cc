@@ -1,6 +1,20 @@
 # DECISIONS
 
-记录本项目已采纳的关键决策（ADR）。新决策追加在文件末尾、编号递增；被取代的决策改为「已废弃」并指向新编号。
+记录 better-cc 项目已采纳的关键决策（ADR）。新决策追加在文件末尾、编号递增；被取代的决策改为「已废弃」并指向新编号。
+
+## ADR-012：项目更名 better-cc，PowerClaude 降级为终端 profile 名称
+
+- 日期：2026-11-05
+- 状态：已采纳
+- 背景：项目最初以 PowerClaude 命名；随着范围扩展到 System Prompt 定制与信任工作区，「PowerClaude」已无法概括项目全貌，但它同时是终端 profile 名（Windows GUID 绑定 / macOS powerclaude）及 `~/.powerclaude/`、`powerclaude-background.*` 等落盘路径的组成部分
+- 考虑过的方案：
+  - 全量改名（含 GUID、路径、profile 名）：破坏「GUID 不可变」约定，且会产生重复 profile 与旧缓存残留
+  - 仅文档层更名，代码标识符维持不变
+- 决策：项目更名为 **better-cc**；终端 profile 名及 `powerclaude` 相关路径维持原样
+- 为什么选这个：文档与产品语义归位，同时完全规避对既有用户配置的破坏性迁移
+- 为什么不选其他：全量改名的迁移成本与风险远高于收益
+- 后果：文档统一使用 better-cc 指代项目；代码内 `powerclaude` 标识符保持原样
+- 何时重新审视：未来如需改 profile 名或落盘路径时一并处理迁移
 
 ## ADR-001：直接改写目标应用的配置文件，而非注入 shell 脚本或包装命令
 

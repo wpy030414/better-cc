@@ -1,12 +1,14 @@
 {
-  "name": "power-claude",
+  "name": "better-cc",
   "private": true,
-  "version": "0.1.0",
-  "description": "PowerClaude — Terminal + Claude Code 一键美化配置方案",
+  "version": "0.2.0",
+  "description": "better-cc — Terminal + Claude Code 一键美化配置方案",
   "type": "module",
+  "engines": {
+    "node": ">=26"
+  },
   "scripts": {
-    "apply": "tsx src/index.ts",
-    "build": "tsc",
+    "apply": "node src/index.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -15,7 +17,6 @@
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
-    "tsx": "^4.19.0",
     "typescript": "^5.7.0"
   }
 }

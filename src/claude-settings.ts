@@ -2,7 +2,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { homedir, platform } from 'node:os';
 import { join } from 'node:path';
 import { execSync } from 'node:child_process';
-import { SAKURA_PINK_CLAUDE_THEME } from './theme.js';
+import { SAKURA_PINK_CLAUDE_THEME } from './theme.ts';
 
 // ── 路径 ──
 function getClaudeSettingsPath(): string {

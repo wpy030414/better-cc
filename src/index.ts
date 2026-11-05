@@ -12,18 +12,18 @@ import {
   backupWindowsTerminal,
   installPowerClaudeCore,
   applyWindowsTerminalTheme,
-} from './terminal/windows.js';
+} from './terminal/windows.ts';
 import {
   installPowerClaudeMacOS,
   backupMacOSTerminal,
   isClaudeInstalledMacOS,
   isPowerClaudeInstalledMacOS,
   findClaudeExeMacOS,
-} from './terminal/macos.js';
-import { applyClaudeTheme } from './claude-settings.js';
-import { getPowerClaudeBackground } from './theme.js';
-import { trustAllWorkspaces } from './trust-workspace.js';
-import type { ClaudeInstallation, ClaudeInstallSource } from './claude-installation.js';
+} from './terminal/macos.ts';
+import { applyClaudeTheme } from './claude-settings.ts';
+import { getPowerClaudeBackground } from './theme.ts';
+import { trustAllWorkspaces } from './trust-workspace.ts';
+import type { ClaudeInstallation, ClaudeInstallSource } from './claude-installation.ts';
 
 // ── CLI 参数 ──
 const { values } = parseArgs({

@@ -11,9 +11,9 @@ import {
   POWER_CLAUDE_GUID,
   createPowerClaudeProfile,
   getPowerClaudeBackground,
-} from '../theme.js';
-import { detectClaudeInstallation, type ClaudeInstallation } from '../claude-installation.js';
-import { currentDetectionEnvironment } from '../node-system.js';
+} from '../theme.ts';
+import { detectClaudeInstallation, type ClaudeInstallation } from '../claude-installation.ts';
+import { currentDetectionEnvironment } from '../node-system.ts';
 
 // ── 类型 ──
 export interface TerminalSettings {

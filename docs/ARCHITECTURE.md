@@ -1,4 +1,4 @@
-# ARCHITECTURE — PowerClaude
+# ARCHITECTURE — better-cc
 
 ## 系统概述
 
@@ -44,12 +44,12 @@ public/（背景图源，gitignored）──拷贝──▶ ~/.claude/powerclaud
 
 | 模块 | 职责 |
 |------|------|
-| `src/index.ts` | CLI 入口：四阶段编排（Init → Select → Execute → Summary），多选菜单 + 固定依赖链执行 |
+| `src/index.ts` | CLI 入口：四阶段编排（Init → Select → Execute → Summary），多选菜单 + 固定依赖链执行；生成 `~/.powerclaude/` 下的 wrapper / trust-poke / 启动器 |
 | `src/theme.ts` | 单一事实源：Sakura Pink 配色/主题定义、PowerClaude profile 工厂、背景图查找（路径可注入便于测试） |
 | `src/claude-installation.ts` | 跨平台 CLI 探测纯逻辑（native / npm / path 三来源），环境全注入、不启动 claude 进程 |
 | `src/node-system.ts` | 环境适配器：把真实进程环境组装成 DetectionEnvironment，传给 claude-installation |
 | `src/trust-workspace.ts` | 信任工作区（存量清理）：直写 `~/.claude.json` 的 `projects` 信任字段，备份 → 设 home 条目 → 翻已有 false→true → 进程检测警告。对新目录的持续覆盖由 `index.ts` 生成的 `trust-poke.mjs` 承担 |
-| `src/terminal/windows.ts` | Windows 终端：settings.json 定位/读写/备份、profile 去重安装、主题应用、链路编排 |
+| `src/terminal/windows.ts` | Windows 终端：settings.json 定位/读写/备份、profile（PowerClaude）去重安装、主题应用、链路编排（单文件内聚） |
 | `src/terminal/macos.ts` | macOS 编排：退出 Terminal → 刷新 cfprefsd → 调 Swift → defaults 设默认 → 冷启动 |
 | `src/terminal/macos.swift` | 生成 .terminal 产物；合成背景图（樱花粉底 + 18% 原图）；构造 security-scoped bookmark；`--plist` 直写偏好 |
 | `src/claude-settings.ts` | 写 `~/.claude/themes/sakura-pink.json`、改 `settings.json` 的 `theme`、Windows 下重启 daemon |
@@ -63,9 +63,10 @@ public/（背景图源，gitignored）──拷贝──▶ ~/.claude/powerclaud
 
 ## 数据流
 
-- 主题定义流：`theme.ts` 常量 → Windows 写入 settings.json（scheme + themes + defaults）；macOS 由 Swift 编码进 profile；Claude 侧写 `themes/sakura-pink.json` + `theme: "custom:sakura-pink"`
+- 主题定义流：`theme.ts` 常量 → Windows 写入 settings.json（scheme + themes + defaults + PowerClaude profile 配色）；macOS 由 Swift 编码进 powerclaude profile；Claude 侧写 `themes/sakura-pink.json` + `theme: "custom:sakura-pink"`
 - 背景图流：`public/` 第一张图（按文件名序）→ 拷贝到 `~/.claude/powerclaude-background.<ext>` → Windows 直接作为 `backgroundImage`；macOS 由 Swift 合成为 `powerclaude-background-blended.png` 并构造 bookmark 指向
 - 备份流：Windows `settings.json.bak-<时间戳>` 同目录副本；macOS `defaults export` 到 `~/com.apple.Terminal.bak-<时间戳>.plist`
+- 包装流（System Prompt 定制）：探测到的 claude 二进制路径 → `~/.powerclaude/wrapper.mjs`（spawn claude 并附加 `--system-prompt`）+ 平台启动器（Windows `claude.cmd` / Unix shell script）→ 前置到用户 PATH（注册表 User Path / shell rc）
 - 信任流（两层）：
   - 存量清理：`trust-workspace.ts` 读取 `~/.claude.json` → 备份时间戳副本 → 设 home 条目 `hasTrustDialogAccepted: true` → 遍历翻转已有 false 条目 → 写回（2 空格缩进）；全部已就绪时跳过（幂等）
   - 增量预注入：`index.ts` 生成 `~/.powerclaude/trust-poke.mjs`，由 `wrapper.mjs` 在每次 spawn claude 之前执行——把 cwd 的 git root（向上查找 `.git`，正斜杠规范化，无 git 时退化为 cwd）直写为已信任条目；已信任则不动文件（幂等），写入前留 `.powerclaude-bak` 滚动备份。根因：Claude Code 的祖先信任链会被 git root 边界截断，home 条目对 git 仓库不可达，只有直接条目（key = 正斜杠 git root）是每次启动实际查询的入口
@@ -76,6 +77,7 @@ public/（背景图源，gitignored）──拷贝──▶ ~/.claude/powerclaud
 - Windows Terminal：读写 `%LOCALAPPDATA%` 下的 `settings.json`，按候选优先级定位（商店稳定版 → 商店 Preview 版 → 免安装版，ADR-010）
 - macOS Terminal.app：直写 `~/Library/Preferences/com.apple.Terminal.plist`，依赖 `cfprefsd` 缓存刷新与冷启动加载
 - Claude Code CLI：`~/.claude/settings.json` + `~/.claude/themes/` 目录约定（`custom:` 前缀引用）；Windows 下通过重启 daemon 生效
+- Windows 用户 PATH（注册表）与 Unix shell rc：System Prompt 定制的 PATH 拦截入口
 - Swift 运行时 / AppKit：macOS 图像合成与 plist 序列化
 
 ## 重要技术边界
@@ -84,7 +86,7 @@ public/（背景图源，gitignored）──拷贝──▶ ~/.claude/powerclaud
 - CLI 探测优先级：候选路径（native `~/.local/bin` → npm shim/exe）→ PATHEXT 感知 PATH 扫描；探测不启动 claude 进程（ADR-008）
 - macOS 直写 plist 的硬前提：Terminal.app 必须已退出（否则其内存里的旧 profile 会回写覆盖），因此安装流程会主动退出并冷启动 Terminal
 - Swift 脚本冷编译可达 60–90s，调用超时设 120s
-- `POWER_CLAUDE_GUID` 是 Windows profile 的稳定身份，一经发布不可更改（否则产生重复 profile）
+- `POWER_CLAUDE_GUID` 是 Windows PowerClaude profile 的稳定身份，一经发布不可更改（否则产生重复 profile）
 - 所有安装操作要求幂等：GUID / scheme / theme 均按名去重，不删除用户已有配置
 - `public/` 在 .gitignore 中：背景图属本机素材，不入库
 - E2E 沙箱把子进程 PATH 收窄到只含桩目录：除提供桩 claude 外，还令 daemon 重启（taskkill）解析失败并被既有 try/catch 吞掉，避免误杀宿主机运行中的 claude.exe（ADR-009）
